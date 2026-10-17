@@ -12,10 +12,21 @@ No cloud, no account - everything runs locally on your Mac.
 
 1. Open the [Releases](../../releases) page on GitHub.
 2. Download `LangSwitcher-arm64.app.zip` (Apple Silicon **arm64**).
-3. Unzip and drag **LangSwitcher.app** into **Applications**.
-4. Open it once from Applications.
+3. Unzip (the zip includes **INSTALL-FIRST-TIME.txt** — read it if macOS blocks the app).
+
+**First launch (Gatekeeper)** — the app is not Apple-notarized, so macOS 26+ may show *“could not verify … is free of malware”* with only **Move to Trash** / **Done**. That is expected; use one of these:
+
+| What to do | Steps |
+|------------|--------|
+| **Recommended** | **Right-click** `LangSwitcher.app` → **Open** → **Open** in the second dialog. |
+| **Already blocked once** | **System Settings → Privacy & Security** → scroll to **Security** → **Open Anyway** next to LangSwitcher → confirm **Open**. |
+| **Terminal** | `xattr -cr ~/Downloads/LangSwitcher.app` then open the app (fix the path if needed). |
+
+4. Drag **LangSwitcher.app** into **Applications** and open it from there.
 5. Allow **Device Control and Data Access** and **Input Monitoring** when macOS asks (use **Open System Settings**, not Deny).
-6. Optional: menu → **Open at login** so Lang Switcher starts after you sign in (app should be in **Applications**).
+6. Optional: menu → **Open at login** so Lang Switcher starts after you sign in.
+
+To distribute without this step you need [Apple notarization](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution) (paid Developer account).
 
 ### Option B - Build from source
 

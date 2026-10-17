@@ -1,0 +1,32 @@
+Lang Switcher — first open on macOS (Gatekeeper)
+================================================
+
+This app is not signed with an Apple Developer ID, so macOS may block it
+the first time. That is normal for a small home project — not a virus.
+
+If you see: “LangSwitcher” Not Opened / Apple could not verify…
+
+Method 1 (easiest)
+------------------
+1. Unzip LangSwitcher-arm64.app.zip
+2. Right-click LangSwitcher.app → Open
+3. In the new dialog, click Open (not Cancel)
+4. Drag LangSwitcher.app to Applications
+5. Open from Applications and allow the two privacy permissions
+
+Method 2 (if you already double-clicked and got “Move to Trash”)
+-----------------------------------------------------------------
+1. System Settings → Privacy & Security
+2. Scroll down to Security
+3. Next to the LangSwitcher message, click Open Anyway
+4. Confirm Open
+5. Move the app to Applications if you have not already
+
+Method 3 (Terminal)
+-------------------
+xattr -cr ~/Downloads/LangSwitcher.app
+open ~/Downloads/LangSwitcher.app
+
+(Change the path if the app is somewhere else.)
+
+Then: Applications → LangSwitcher → allow Device Control and Input Monitoring.
