@@ -21,7 +21,7 @@ install_name_tool -id @rpath/libLangSwitcherCore.dylib "$root/.build/libLangSwit
 swiftc -sdk "$sdk" -target arm64-apple-macosx10.15 -O \
     -I "$root/.build" -L "$root/.build" -lLangSwitcherCore \
     -Xlinker -rpath -Xlinker @executable_path/../Frameworks \
-    -framework AppKit -framework ApplicationServices -framework Carbon -framework Foundation \
+    -framework AppKit -framework ApplicationServices -framework Carbon -framework CoreServices -framework Foundation \
     -o "$root/.build/LangSwitcher" \
     "$root"/Sources/LangSwitcher/*.swift
 

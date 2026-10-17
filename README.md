@@ -6,7 +6,7 @@ No cloud, no account - everything runs locally on your Mac.
 
 ## Install (for family / GitHub users)
 
-**Requirements:** macOS 11 or later, Apple Silicon or Intel (build per architecture, see below).
+**Requirements:** macOS 11 or later, Apple Silicon (release build; Intel on request).
 
 ### Option A - Download a release (easiest)
 
@@ -15,7 +15,7 @@ No cloud, no account - everything runs locally on your Mac.
 3. Unzip and drag **LangSwitcher.app** into **Applications**.
 4. Open it once from Applications.
 5. Allow **Device Control and Data Access** and **Input Monitoring** when macOS asks (use **Open System Settings**, not Deny).
-6. Optional: **System Settings → General → Login Items** → add Lang Switcher so it starts after login.
+6. Optional: menu → **Open at login** so Lang Switcher starts after you sign in (app should be in **Applications**).
 
 ### Option B - Build from source
 

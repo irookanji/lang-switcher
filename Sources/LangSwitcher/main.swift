@@ -139,6 +139,15 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         pause.state = isPaused ? .on : .off
         menu.addItem(pause)
 
+        let loginItem = NSMenuItem(
+            title: "Open at login",
+            action: #selector(toggleLaunchAtLogin),
+            keyEquivalent: ""
+        )
+        loginItem.target = self
+        loginItem.state = LaunchAtLogin.isEnabled ? .on : .off
+        menu.addItem(loginItem)
+
         let convert = NSMenuItem(
             title: "Convert current word - ⌃⌥L",
             action: nil,
@@ -281,6 +290,25 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         isPaused = monitor.isPaused
         UserDefaults.standard.set(isPaused, forKey: "isPaused")
         refreshStatusTitle()
+    }
+
+    @objc private func toggleLaunchAtLogin() {
+        let enable = !LaunchAtLogin.isEnabled
+        do {
+            try LaunchAtLogin.setEnabled(enable)
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Could not change login item"
+            alert.informativeText = """
+            \(error.localizedDescription)
+
+            Keep Lang Switcher in Applications (/Applications or ~/Applications).
+            You can also add it manually in System Settings → General → Login Items.
+            """
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "OK")
+            alert.runModal()
+        }
     }
 
     @objc private func openAccessibility() {
