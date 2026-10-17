@@ -1,0 +1,6 @@
+.build/
+.swiftpm/
+LangSwitcher.app
+LangSwitcher-arm64.app.zip
+AppIcon.iconset/
+.DS_Store

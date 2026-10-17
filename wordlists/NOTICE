@@ -1,0 +1,11 @@
+Word lists in this directory are derived from the 2018 OpenSubtitles frequency
+lists published by Hermit Dave:
+
+https://github.com/hermitdave/FrequencyWords
+
+The word-list content is licensed under Creative Commons Attribution-ShareAlike
+4.0 International (CC BY-SA 4.0).
+
+Changes: limited to about 12,000 words per language, filtered to alphabetic
+tokens, and split so a word that is much more common in English than in
+Swedish (or the reverse) is kept for that language only.
