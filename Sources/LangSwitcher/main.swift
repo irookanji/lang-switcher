@@ -1,7 +1,10 @@
 import AppKit
+import Carbon
 import Foundation
 
 import LangSwitcherCore
+
+private let pauseShortcutKeyCode: UInt16 = UInt16(kVK_ANSI_P)
 
 /// Only one Lang Switcher may run. A second copy (e.g. Desktop + Applications) breaks permissions.
 enum SingleInstance {
@@ -29,12 +32,15 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var displayedLanguage: Language = .en
     private var isPaused = false
     private var retryTimer: Timer?
+    private var pauseShortcutMonitor: Any?
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         SingleInstance.enforce()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        retryTimer?.invalidate()
+        retryTimer = nil
         monitor?.stop()
     }
 
@@ -61,8 +67,27 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         self.monitor = monitor
         refreshStatusTitle()
 
+        installPauseShortcut()
+
         PermissionOnboarding.runIfNeeded { [weak self] in
             self?.startKeyboardMonitor()
+        }
+    }
+
+    private func installPauseShortcut() {
+        pauseShortcutMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self else {
+                return
+            }
+            let command = event.modifierFlags.contains(.command)
+            let option = event.modifierFlags.contains(.option)
+            let control = event.modifierFlags.contains(.control)
+            guard command, option, !control, event.keyCode == pauseShortcutKeyCode else {
+                return
+            }
+            DispatchQueue.main.async {
+                self.togglePause()
+            }
         }
     }
 
@@ -133,8 +158,9 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let pause = NSMenuItem(
             title: "Pause switching",
             action: #selector(togglePause),
-            keyEquivalent: ""
+            keyEquivalent: "p"
         )
+        pause.keyEquivalentModifierMask = [.option, .command]
         pause.target = self
         pause.state = isPaused ? .on : .off
         menu.addItem(pause)

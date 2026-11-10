@@ -13,6 +13,12 @@ public enum SwitchDecision: Equatable {
 public struct LanguageDetector {
     private let indexes: [Language: WordIndex]
 
+    /// Abbreviations whose keys also spell a short Russian word (`vs` / `мы`, `yf` / `на`).
+    /// On US or Swedish the Latin form stays. On Russian the Cyrillic form stays.
+    private static let keptLatinAbbreviations: Set<String> = [
+        "vs", "db", "yf", "yb", "gf", "gp"
+    ]
+
     public init(words: [Language: Set<String>]) {
         var indexes: [Language: WordIndex] = [:]
         for (language, list) in words {
@@ -27,6 +33,10 @@ public struct LanguageDetector {
         wordFinished: Bool
     ) -> SwitchDecision {
         guard let currentText = candidates[current], currentText.count >= 2 else {
+            return .stay
+        }
+
+        if keepsAbbreviation(candidates) {
             return .stay
         }
 
@@ -57,7 +67,7 @@ public struct LanguageDetector {
             return .change(words[0].0)
         }
 
-        // Same word in more than one Latin list (e.g. "super" in EN and SV).
+        // Same word in more than one Latin list (e.g. "super" in US and SE).
         let spellings = Set(words.compactMap { language, _ in candidates[language]?.lowercased() })
         if spellings.count == 1 {
             for language in Language.allCases where words.contains(where: { $0.0 == language && $0.0 != current }) {
@@ -89,6 +99,16 @@ public struct LanguageDetector {
             return winnerText.count >= 3 ? .change(winner) : .stay
         }
         return .stay
+    }
+
+    /// These key sequences never change layout: `vs` stays `vs` off Russian, and `мы` stays `мы` on Russian.
+    private func keepsAbbreviation(_ candidates: [Language: String]) -> Bool {
+        for text in candidates.values {
+            if Self.keptLatinAbbreviations.contains(text.lowercased()) {
+                return true
+            }
+        }
+        return false
     }
 
     private func script(of text: String) -> Script {

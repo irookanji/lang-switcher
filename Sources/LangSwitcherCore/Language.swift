@@ -10,9 +10,9 @@ public enum Language: String, CaseIterable {
     public var title: String {
         switch self {
         case .en:
-            return "EN"
+            return "US"
         case .sv:
-            return "SV"
+            return "SE"
         case .ru:
             return "RU"
         }

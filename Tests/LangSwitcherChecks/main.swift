@@ -147,6 +147,51 @@ private func runDetectorChecks() {
         .change(.en),
         "super from Russian layout -> English"
     )
+
+    let kept = ["VS", "vs", "Db", "db", "yf", "yb", "gf", "gp"]
+    let keptRussian = ["мы", "мы", "ви", "ви", "на", "ни", "па", "пз"]
+    for pair in zip(kept, keptRussian) {
+        let candidates: [Language: String] = [.en: pair.0, .sv: pair.0, .ru: pair.1]
+        checkEqual(
+            real.decide(candidates: candidates, current: .en, wordFinished: true),
+            .stay,
+            "\(pair.0) stays Latin on US"
+        )
+        checkEqual(
+            real.decide(candidates: candidates, current: .sv, wordFinished: true),
+            .stay,
+            "\(pair.0) stays Latin on Swedish"
+        )
+        checkEqual(
+            real.decide(candidates: candidates, current: .ru, wordFinished: true),
+            .stay,
+            "\(pair.1) stays Cyrillic on Russian"
+        )
+    }
+
+    let claimed = LanguageDetector(words: [
+        .en: ["vs", "db", "yf", "yb", "gf", "gp", "hello"],
+        .sv: [],
+        .ru: []
+    ])
+    checkEqual(
+        claimed.decide(
+            candidates: [.en: "vs", .sv: "vs", .ru: "мы"],
+            current: .ru,
+            wordFinished: true
+        ),
+        .stay,
+        "мы stays even when vs is listed as English"
+    )
+    checkEqual(
+        real.decide(
+            candidates: [.en: "yt", .sv: "yt", .ru: "не"],
+            current: .en,
+            wordFinished: true
+        ),
+        .change(.ru),
+        "other two-letter Russian words still switch"
+    )
 }
 
 private func letterKeys(on translator: LayoutTranslator) -> [Character: UInt16] {
@@ -189,6 +234,12 @@ private func runLayoutChecks() {
     let russianKeys = LayoutTranslator(layoutData: russian.layoutData, keyboardType: keyboardType)
 
     checkEqual(typed("привет", on: russianKeys, readBy: englishKeys), "ghbdtn", "привет on US")
+    checkEqual(typed("vs", on: englishKeys, readBy: russianKeys), "мы", "vs on Russian")
+    checkEqual(typed("db", on: englishKeys, readBy: russianKeys), "ви", "db on Russian")
+    checkEqual(typed("yf", on: englishKeys, readBy: russianKeys), "на", "yf on Russian")
+    checkEqual(typed("yb", on: englishKeys, readBy: russianKeys), "ни", "yb on Russian")
+    checkEqual(typed("gf", on: englishKeys, readBy: russianKeys), "па", "gf on Russian")
+    checkEqual(typed("gp", on: englishKeys, readBy: russianKeys), "пз", "gp on Russian")
     checkEqual(typed("hello", on: englishKeys, readBy: russianKeys), "руддщ", "hello on Russian")
     checkEqual(typed("för", on: swedishKeys, readBy: englishKeys), "f;r", "för on US")
     checkEqual(typed("på", on: swedishKeys, readBy: englishKeys), "p[", "på on US")

@@ -47,7 +47,7 @@ Typical install is about **1–2 MB** (app + bundled word lists). One small back
 
 ## Menu bar
 
-- **EN / SV / RU** - current keyboard language the app tracks.
+- **US / SE / RU** - current keyboard language the app tracks.
 - **⏸** - switching is **paused** (app still running; keys are not rewritten).
 - Menu → **Pause switching** (or **⌥⌘P**) to pause or resume without quitting.
 
@@ -71,7 +71,7 @@ Run **only one copy** (usually `/Applications/LangSwitcher.app`).
 - Russian: type `ghbdtn` with English layout → becomes `привет` while you type (from the 3rd letter).
 - Swedish / English: correction at **word end** (space or punctuation), e.g. `f;r` + space → `för`.
 - Shared Latin words (`super`, `och`, `the`): layout switches at the end of the word.
-- **⌃⌥L** - cycle the current word through EN → SV → RU.
+- **⌃⌥L** - cycle the current word through US → SE → RU.
 
 ## Custom words
 

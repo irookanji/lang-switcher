@@ -3,61 +3,66 @@ import Foundation
 
 enum LaunchAtLogin {
     static var isEnabled: Bool {
-        guard let loginItems = LSSharedFileListCreate(
-            nil,
-            kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
-            nil
-        )?.takeRetainedValue() else {
+        guard let bundleID = Bundle.main.bundleIdentifier else {
             return false
         }
-        let appURL = Bundle.main.bundleURL as CFURL
-        let snapshot = LSSharedFileListCopySnapshot(loginItems, nil)?.takeRetainedValue() as? [LSSharedFileListItem]
-            ?? []
-        for item in snapshot {
-            guard let url = LSSharedFileListItemCopyResolvedURL(item, 0, nil)?.takeRetainedValue() else {
-                continue
-            }
-            if CFEqual(url, appURL) {
-                return true
-            }
+        guard let loginItems = sessionLoginItems() else {
+            return false
         }
-        return false
+        return snapshot(loginItems).contains { itemMatchesApp(item: $0, bundleID: bundleID) }
     }
 
     static func setEnabled(_ enabled: Bool) throws {
-        guard let loginItems = LSSharedFileListCreate(
+        guard let bundleID = Bundle.main.bundleIdentifier else {
+            throw LaunchAtLoginError.loginItemsUnavailable
+        }
+        guard let loginItems = sessionLoginItems() else {
+            throw LaunchAtLoginError.loginItemsUnavailable
+        }
+        removeAllItems(for: bundleID, in: loginItems)
+        guard enabled else {
+            return
+        }
+        let appURL = Bundle.main.bundleURL as CFURL
+        let added = LSSharedFileListInsertItemURL(
+            loginItems,
+            kLSSharedFileListItemLast.takeUnretainedValue(),
+            nil,
+            nil,
+            appURL,
+            nil,
+            nil
+        )
+        if added == nil {
+            throw LaunchAtLoginError.addFailed
+        }
+    }
+
+    private static func sessionLoginItems() -> LSSharedFileList? {
+        LSSharedFileListCreate(
             nil,
             kLSSharedFileListSessionLoginItems.takeUnretainedValue(),
             nil
-        )?.takeRetainedValue() else {
-            throw LaunchAtLoginError.loginItemsUnavailable
+        )?.takeRetainedValue()
+    }
+
+    private static func snapshot(_ loginItems: LSSharedFileList) -> [LSSharedFileListItem] {
+        LSSharedFileListCopySnapshot(loginItems, nil)?.takeRetainedValue() as? [LSSharedFileListItem] ?? []
+    }
+
+    private static func itemMatchesApp(item: LSSharedFileListItem, bundleID: String) -> Bool {
+        guard let url = LSSharedFileListItemCopyResolvedURL(item, 0, nil)?.takeRetainedValue() as URL? else {
+            return false
         }
-        let appURL = Bundle.main.bundleURL as CFURL
-        if enabled {
-            let added = LSSharedFileListInsertItemURL(
-                loginItems,
-                kLSSharedFileListItemLast.takeUnretainedValue(),
-                nil,
-                nil,
-                appURL,
-                nil,
-                nil
-            )
-            if added == nil {
-                throw LaunchAtLoginError.addFailed
-            }
-            return
+        if url == Bundle.main.bundleURL {
+            return true
         }
-        let snapshot = LSSharedFileListCopySnapshot(loginItems, nil)?.takeRetainedValue() as? [LSSharedFileListItem]
-            ?? []
-        for item in snapshot {
-            guard let url = LSSharedFileListItemCopyResolvedURL(item, 0, nil)?.takeRetainedValue() else {
-                continue
-            }
-            if CFEqual(url, appURL) {
-                LSSharedFileListItemRemove(loginItems, item)
-                return
-            }
+        return Bundle(url: url)?.bundleIdentifier == bundleID
+    }
+
+    private static func removeAllItems(for bundleID: String, in loginItems: LSSharedFileList) {
+        for item in snapshot(loginItems) where itemMatchesApp(item: item, bundleID: bundleID) {
+            LSSharedFileListItemRemove(loginItems, item)
         }
     }
 }

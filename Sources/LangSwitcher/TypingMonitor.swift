@@ -292,6 +292,9 @@ final class TypingMonitor {
             return
         }
         let target = order[(index + 1) % order.count]
+        guard activate(target) else {
+            return
+        }
         let texts = translations(of: strokes)
         let currentText = texts[currentLanguage]?.text ?? ""
         let updatedText = texts[target]?.text ?? currentText
@@ -299,7 +302,6 @@ final class TypingMonitor {
             replace(deleting: composedText.count, with: updatedText, proxy: proxy)
             composedText = updatedText
         }
-        activate(target)
     }
 
     private func translations(of strokes: [Keystroke]) -> [Language: LayoutTranslation] {
