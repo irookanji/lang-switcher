@@ -1,0 +1,55 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Logic and layout checks
+        run: |
+          chmod +x scripts/check.sh
+          ./scripts/check.sh
+
+  build:
+    name: Build app
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build LangSwitcher.app
+        run: |
+          chmod +x scripts/build-app.sh scripts/build-icon.sh
+          ./scripts/build-app.sh
+
+  lint:
+    name: Lint
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: brew install shellcheck swiftlint
+
+      - name: ShellCheck
+        run: shellcheck scripts/*.sh
+
+      - name: SwiftLint
+        run: swiftlint lint --config .swiftlint.yml
+
+      - name: Swift package build
+        run: swift build -v

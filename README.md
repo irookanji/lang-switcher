@@ -97,6 +97,8 @@ Bundled lists are derived from [Hermit Dave FrequencyWords](https://github.com/h
 ./scripts/build-app.sh
 ```
 
+CI runs on every push/PR to `main` (see [.github/workflows/verify.yml](.github/workflows/verify.yml)): `check.sh`, app build, ShellCheck, SwiftLint, and `swift build`.
+
 `swift build` may fail without full Xcode (no XCTest in Command Line Tools only).
 
 ## License

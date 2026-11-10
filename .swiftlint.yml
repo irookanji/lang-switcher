@@ -1,0 +1,29 @@
+included:
+  - Sources
+  - Tests
+
+excluded:
+  - .build
+
+line_length:
+  warning: 140
+  ignores_urls: true
+  ignores_comments: true
+
+file_length:
+  warning: 550
+  error: 800
+
+function_body_length:
+  warning: 70
+  error: 120
+
+type_body_length:
+  warning: 350
+  error: 550
+
+disabled_rules:
+  - todo
+  - nesting
+  - type_name
+  - identifier_name
