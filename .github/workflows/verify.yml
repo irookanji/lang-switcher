@@ -15,13 +15,8 @@ jobs:
     name: Tests
     runs-on: macos-latest
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Logic and layout checks
         run: |
@@ -32,13 +27,8 @@ jobs:
     name: Build app
     runs-on: macos-latest
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build LangSwitcher.app
         run: |
@@ -49,13 +39,8 @@ jobs:
     name: Lint
     runs-on: macos-latest
     steps:
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install tools
         run: brew install shellcheck swiftlint
