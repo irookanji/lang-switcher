@@ -458,12 +458,29 @@ enum PermissionPrompts {
         CGPreflightListenEventAccess()
     }
 
+    /// Required to inject backspace and corrected letters after a layout switch.
+    static var hasPostEventAccess: Bool {
+        CGPreflightPostEventAccess()
+    }
+
+    static var hasRequiredPermissions: Bool {
+        hasAccessibility && hasInputMonitoring && hasPostEventAccess
+    }
+
     @discardableResult
     static func requestInputMonitoringIfNeeded() -> Bool {
         if hasInputMonitoring {
             return true
         }
         return CGRequestListenEventAccess()
+    }
+
+    @discardableResult
+    static func requestPostEventAccessIfNeeded() -> Bool {
+        if hasPostEventAccess {
+            return true
+        }
+        return CGRequestPostEventAccess()
     }
 
     static func openAccessibilitySettings() {

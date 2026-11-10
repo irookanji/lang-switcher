@@ -4,7 +4,7 @@ import Foundation
 enum PermissionOnboarding {
     /// Requests system prompts and guides the user when TCC is not granted yet.
     static func runIfNeeded(onGranted: @escaping () -> Void) {
-        if PermissionPrompts.hasAccessibility && PermissionPrompts.hasInputMonitoring {
+        if PermissionPrompts.hasRequiredPermissions {
             onGranted()
             return
         }
@@ -12,12 +12,12 @@ enum PermissionOnboarding {
         requestSystemPrompts()
 
         let alert = NSAlert()
-        alert.messageText = "Lang Switcher needs two permissions"
+        alert.messageText = "Lang Switcher needs macOS privacy access"
         alert.informativeText = """
         macOS keeps these separate from each other.
 
         1. When asked to “control this Mac”, click Open System Settings — not Deny.
-        2. In Device Control and Data Access → turn LangSwitcher ON.
+        2. In Device Control and Data Access → turn LangSwitcher ON (allows reading and rewriting keys).
         3. In Input Monitoring → turn LangSwitcher ON (add /Applications/LangSwitcher.app with + if needed).
         4. Click OK here, then Quit Lang Switcher (menu → Quit) and open it again from Applications.
 
@@ -44,11 +44,12 @@ enum PermissionOnboarding {
     private static func requestSystemPrompts() {
         _ = PermissionPrompts.requestInputMonitoringIfNeeded()
         PermissionPrompts.requestAccessibilityPromptIfNeeded()
+        _ = PermissionPrompts.requestPostEventAccessIfNeeded()
     }
 
     private static func schedulePermissionPoll(onGranted: @escaping () -> Void) {
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            guard PermissionPrompts.hasAccessibility && PermissionPrompts.hasInputMonitoring else {
+            guard PermissionPrompts.hasRequiredPermissions else {
                 return
             }
             timer.invalidate()

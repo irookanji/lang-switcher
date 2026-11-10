@@ -33,6 +33,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var isPaused = false
     private var retryTimer: Timer?
     private var pauseShortcutMonitor: Any?
+    private var wordsLoaded = 0
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         SingleInstance.enforce()
@@ -44,6 +45,15 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         monitor?.stop()
     }
 
+    func applicationDidBecomeActive(_ notification: Notification) {
+        guard PermissionPrompts.hasRequiredPermissions else {
+            return
+        }
+        if monitor?.isListening != true {
+            startKeyboardMonitor()
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         displayedLanguage = catalog.currentLanguage() ?? .en
         statusItem.button?.title = displayedLanguage.title
@@ -51,6 +61,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.menu?.delegate = self
 
         let words = loadWords()
+        wordsLoaded = words.values.reduce(0) { $0 + $1.count }
         let detector = LanguageDetector(words: words)
         let monitor = TypingMonitor(detector: detector, catalog: catalog)
         let savedPaused = UserDefaults.standard.object(forKey: "isPaused") as? Bool ?? false
@@ -106,12 +117,14 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let listening = monitor?.isListening ?? false
         let accessibility = PermissionPrompts.hasAccessibility
         let inputMonitoring = PermissionPrompts.hasInputMonitoring
+        let postEvent = PermissionPrompts.hasPostEventAccess
 
         let status = NSMenuItem(
             title: statusTitle(
                 listening: listening,
                 accessibility: accessibility,
                 inputMonitoring: inputMonitoring,
+                postEvent: postEvent,
                 paused: isPaused
             ),
             action: nil,
@@ -136,9 +149,31 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         listenLine.isEnabled = false
         menu.addItem(listenLine)
 
+        let postLine = NSMenuItem(
+            title: "Key rewriting: \(postEvent ? "granted" : "missing")",
+            action: nil,
+            keyEquivalent: ""
+        )
+        postLine.isEnabled = false
+        menu.addItem(postLine)
+
+        if wordsLoaded == 0 {
+            let wordsLine = NSMenuItem(
+                title: "Word lists: not loaded (reinstall the app)",
+                action: nil,
+                keyEquivalent: ""
+            )
+            wordsLine.isEnabled = false
+            menu.addItem(wordsLine)
+        }
+
         if !listening {
             let hint = NSMenuItem(
-                title: permissionHint(accessibility: accessibility, inputMonitoring: inputMonitoring),
+                title: permissionHint(
+                    accessibility: accessibility,
+                    inputMonitoring: inputMonitoring,
+                    postEvent: postEvent
+                ),
                 action: nil,
                 keyEquivalent: ""
             )
@@ -193,7 +228,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         menu.addItem(.separator())
 
-        if !accessibility {
+        if !accessibility || !postEvent {
             let access = NSMenuItem(
                 title: "Grant Accessibility…",
                 action: #selector(openAccessibility),
@@ -243,7 +278,13 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.title = displayedLanguage.title
     }
 
-    private func statusTitle(listening: Bool, accessibility: Bool, inputMonitoring: Bool, paused: Bool) -> String {
+    private func statusTitle(
+        listening: Bool,
+        accessibility: Bool,
+        inputMonitoring: Bool,
+        postEvent: Bool,
+        paused: Bool
+    ) -> String {
         if paused && listening {
             return "Status: paused - switching off"
         }
@@ -254,18 +295,24 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if !accessibility {
             return "Status: not listening - allow Accessibility"
         }
+        if !postEvent {
+            return "Status: listening only - allow key rewriting"
+        }
         if !inputMonitoring {
             return "Status: not listening - allow Input Monitoring"
         }
         return "Status: permissions OK - tap Retry below"
     }
 
-    private func permissionHint(accessibility: Bool, inputMonitoring: Bool) -> String {
+    private func permissionHint(accessibility: Bool, inputMonitoring: Bool, postEvent: Bool) -> String {
         if !accessibility {
             return "In the system dialog, click Open System Settings (not Deny)"
         }
         if !inputMonitoring {
             return "Privacy → Input Monitoring → LangSwitcher ON"
+        }
+        if !postEvent {
+            return "After rebuild: remove LangSwitcher from Device Control, add again, then Quit and reopen"
         }
         return "Quit the app, open it again, then Retry keyboard access"
     }
@@ -298,7 +345,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self = self, let monitor = self.monitor else {
                 return
             }
-            guard PermissionPrompts.hasAccessibility && PermissionPrompts.hasInputMonitoring else {
+            guard PermissionPrompts.hasRequiredPermissions else {
                 return
             }
             if monitor.start() {
@@ -339,6 +386,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func openAccessibility() {
         PermissionPrompts.requestAccessibilityPromptIfNeeded()
+        _ = PermissionPrompts.requestPostEventAccessIfNeeded()
         PermissionPrompts.openAccessibilitySettings()
         let alert = NSAlert()
         alert.messageText = "Allow Accessibility for this app"
@@ -365,6 +413,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func retryKeyboardAccess() {
         _ = PermissionPrompts.requestInputMonitoringIfNeeded()
         PermissionPrompts.requestAccessibilityPromptIfNeeded()
+        _ = PermissionPrompts.requestPostEventAccessIfNeeded()
         if monitor?.start() == true {
             retryTimer?.invalidate()
         } else {
