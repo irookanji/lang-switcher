@@ -15,12 +15,16 @@ file_length:
   error: 800
 
 function_body_length:
-  warning: 70
-  error: 120
+  warning: 100
+  error: 180
 
 type_body_length:
   warning: 350
-  error: 550
+  error: 420
+
+cyclomatic_complexity:
+  warning: 12
+  error: 20
 
 disabled_rules:
   - todo

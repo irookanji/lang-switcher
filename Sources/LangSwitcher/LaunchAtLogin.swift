@@ -19,22 +19,33 @@ enum LaunchAtLogin {
         guard let loginItems = sessionLoginItems() else {
             throw LaunchAtLoginError.loginItemsUnavailable
         }
-        removeAllItems(for: bundleID, in: loginItems)
         guard enabled else {
+            removeAllItems(for: bundleID, in: loginItems)
             return
         }
-        let appURL = Bundle.main.bundleURL as CFURL
+
+        let appURL = Bundle.main.bundleURL
+        let existing = snapshot(loginItems).filter { itemMatchesApp(item: $0, bundleID: bundleID) }
+        let onlyCurrent = existing.count == 1 && itemResolvesToCurrentApp(existing[0])
+        if onlyCurrent {
+            return
+        }
+
+        let before = snapshot(loginItems)
         let added = LSSharedFileListInsertItemURL(
             loginItems,
             kLSSharedFileListItemLast.takeUnretainedValue(),
             nil,
             nil,
-            appURL,
+            appURL as CFURL,
             nil,
             nil
         )
         if added == nil {
             throw LaunchAtLoginError.addFailed
+        }
+        for item in before where itemMatchesApp(item: item, bundleID: bundleID) {
+            LSSharedFileListItemRemove(loginItems, item)
         }
     }
 
@@ -50,11 +61,35 @@ enum LaunchAtLogin {
         LSSharedFileListCopySnapshot(loginItems, nil)?.takeRetainedValue() as? [LSSharedFileListItem] ?? []
     }
 
-    private static func itemMatchesApp(item: LSSharedFileListItem, bundleID: String) -> Bool {
-        guard let url = LSSharedFileListItemCopyResolvedURL(item, 0, nil)?.takeRetainedValue() as URL? else {
+    private static func resolvedURL(for item: LSSharedFileListItem) -> URL? {
+        LSSharedFileListItemCopyResolvedURL(item, 0, nil)?.takeRetainedValue() as URL?
+    }
+
+    private static func urlsReferToSameApp(_ url: URL, as current: URL) -> Bool {
+        if url == current {
+            return true
+        }
+        if url.resolvingSymlinksInPath().path == current.resolvingSymlinksInPath().path {
+            return true
+        }
+        guard let expected = Bundle.main.bundleIdentifier else {
             return false
         }
-        if url == Bundle.main.bundleURL {
+        return Bundle(url: url)?.bundleIdentifier == expected
+    }
+
+    private static func itemResolvesToCurrentApp(_ item: LSSharedFileListItem) -> Bool {
+        guard let url = resolvedURL(for: item) else {
+            return false
+        }
+        return urlsReferToSameApp(url, as: Bundle.main.bundleURL)
+    }
+
+    private static func itemMatchesApp(item: LSSharedFileListItem, bundleID: String) -> Bool {
+        guard let url = resolvedURL(for: item) else {
+            return false
+        }
+        if urlsReferToSameApp(url, as: Bundle.main.bundleURL) {
             return true
         }
         return Bundle(url: url)?.bundleIdentifier == bundleID

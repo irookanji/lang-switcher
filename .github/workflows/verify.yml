@@ -15,6 +15,11 @@ jobs:
     name: Tests
     runs-on: macos-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -27,6 +32,11 @@ jobs:
     name: Build app
     runs-on: macos-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -39,6 +49,11 @@ jobs:
     name: Lint
     runs-on: macos-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
       - name: Checkout
         uses: actions/checkout@v4
 

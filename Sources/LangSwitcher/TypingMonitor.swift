@@ -12,6 +12,7 @@ private let boundaryKeyCodes: Set<UInt16> = [36, 48, 49, 76]
 private let resetKeyCodes: Set<UInt16> = [53, 115, 116, 117, 119, 121, 123, 124, 125, 126]
 private let deleteKeyCode: UInt16 = 51
 private let manualConvertKeyCode: UInt16 = 37
+private let pauseShortcutKeyCode: UInt16 = UInt16(kVK_ANSI_P)
 private let syntheticEventMark: Int64 = 0x4C_53_57
 private let maximumWordKeys = 40
 
@@ -32,6 +33,7 @@ final class TypingMonitor {
     var autoSwitch = true
     var onLanguageChange: ((Language) -> Void)?
     var onPauseChange: ((Bool) -> Void)?
+    var onPauseToggle: (() -> Void)?
 
     var isPaused: Bool {
         get { !autoSwitch }
@@ -141,6 +143,11 @@ final class TypingMonitor {
 
         if isManualConvert(flags: flags, keyCode: keyCode) {
             cycleLayout(proxy: proxy)
+            return nil
+        }
+
+        if isPauseShortcut(flags: flags, keyCode: keyCode) {
+            onPauseToggle?()
             return nil
         }
 
@@ -384,6 +391,14 @@ final class TypingMonitor {
         }
         let relevant = flags.intersection([.maskControl, .maskAlternate, .maskCommand])
         return relevant.contains(.maskControl) && relevant.contains(.maskAlternate) && !relevant.contains(.maskCommand)
+    }
+
+    private func isPauseShortcut(flags: CGEventFlags, keyCode: UInt16) -> Bool {
+        guard keyCode == pauseShortcutKeyCode else {
+            return false
+        }
+        let relevant = flags.intersection([.maskControl, .maskAlternate, .maskCommand])
+        return relevant.contains(.maskCommand) && relevant.contains(.maskAlternate) && !relevant.contains(.maskControl)
     }
 
     private func observeLayoutChanges() {

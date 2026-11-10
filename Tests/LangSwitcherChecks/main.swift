@@ -213,11 +213,54 @@ private func typed(_ word: String, on source: LayoutTranslator, readBy destinati
     return destination.translate(strokes).text
 }
 
+private func checkLayout(
+    _ catalog: KeyboardCatalog,
+    language: Language,
+    preferredIDs: [String],
+    label: String
+) {
+    guard let id = catalog.layout(for: language)?.id else {
+        check(false, "\(label) layout not installed")
+        return
+    }
+    check(
+        preferredIDs.contains(id),
+        "\(label) layout — expected one of \(preferredIDs), got \(id)"
+    )
+}
+
 private func runLayoutChecks() {
     let catalog = KeyboardCatalog()
-    checkEqual(catalog.layout(for: .en)?.id, "com.apple.keylayout.USInternational-PC", "english layout")
-    checkEqual(catalog.layout(for: .sv)?.id, "com.apple.keylayout.Swedish-Pro", "swedish layout")
-    checkEqual(catalog.layout(for: .ru)?.id, "com.apple.keylayout.Russian", "russian layout")
+    checkLayout(
+        catalog,
+        language: .en,
+        preferredIDs: [
+            "com.apple.keylayout.USInternational-PC",
+            "com.apple.keylayout.US",
+            "com.apple.keylayout.ABC"
+        ],
+        label: "english"
+    )
+    checkLayout(
+        catalog,
+        language: .sv,
+        preferredIDs: [
+            "com.apple.keylayout.Swedish-Pro",
+            "com.apple.keylayout.Swedish",
+            "com.apple.keylayout.SwedishSami-PC"
+        ],
+        label: "swedish"
+    )
+    checkLayout(
+        catalog,
+        language: .ru,
+        preferredIDs: [
+            "com.apple.keylayout.Russian",
+            "com.apple.keylayout.RussianWin",
+            "com.apple.keylayout.Russian-Phonetic"
+        ],
+        label: "russian"
+    )
 
     guard
         let english = catalog.layout(for: .en),

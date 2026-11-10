@@ -1,10 +1,7 @@
 import AppKit
-import Carbon
 import Foundation
 
 import LangSwitcherCore
-
-private let pauseShortcutKeyCode: UInt16 = UInt16(kVK_ANSI_P)
 
 /// Only one Lang Switcher may run. A second copy (e.g. Desktop + Applications) breaks permissions.
 enum SingleInstance {
@@ -32,7 +29,6 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var displayedLanguage: Language = .en
     private var isPaused = false
     private var retryTimer: Timer?
-    private var pauseShortcutMonitor: Any?
     private var wordsLoaded = 0
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -75,30 +71,16 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             self?.isPaused = paused
             self?.refreshStatusTitle()
         }
+        monitor.onPauseToggle = { [weak self] in
+            DispatchQueue.main.async {
+                self?.togglePause()
+            }
+        }
         self.monitor = monitor
         refreshStatusTitle()
 
-        installPauseShortcut()
-
         PermissionOnboarding.runIfNeeded { [weak self] in
             self?.startKeyboardMonitor()
-        }
-    }
-
-    private func installPauseShortcut() {
-        pauseShortcutMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard let self = self else {
-                return
-            }
-            let command = event.modifierFlags.contains(.command)
-            let option = event.modifierFlags.contains(.option)
-            let control = event.modifierFlags.contains(.control)
-            guard command, option, !control, event.keyCode == pauseShortcutKeyCode else {
-                return
-            }
-            DispatchQueue.main.async {
-                self.togglePause()
-            }
         }
     }
 
@@ -289,17 +271,20 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return "Status: paused - switching off"
         }
         if listening {
+            if !postEvent {
+                return "Status: listening - key rewriting missing"
+            }
             let layout = catalog.currentLayoutName() ?? "unknown"
             return "Status: listening (\(layout))"
         }
         if !accessibility {
             return "Status: not listening - allow Accessibility"
         }
-        if !postEvent {
-            return "Status: listening only - allow key rewriting"
-        }
         if !inputMonitoring {
             return "Status: not listening - allow Input Monitoring"
+        }
+        if !postEvent {
+            return "Status: not listening - allow key rewriting"
         }
         return "Status: permissions OK - tap Retry below"
     }
@@ -396,7 +381,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         In Device Control and Data Access, turn LangSwitcher ON for this file:
         \(PermissionPrompts.appLocationForPermissions())
 
-        If the toggle is already ON but the menu still says missing, remove LangSwitcher with −, add it again with +, then Quit and reopen the app.
+        If the toggle is already ON but the menu still says missing, remove LangSwitcher with −,
+        add it again with +, then Quit and reopen the app.
 
         Each rebuild changes the signature; after ./scripts/build-app.sh you must re-allow once.
         """
